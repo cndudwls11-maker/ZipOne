@@ -14,11 +14,8 @@
 
 /* Product artwork keeps its natural ratio; instruction photos remain uncropped. */
 .hero-figure{margin-inline:0}.product-stage{min-height:0}.product-stage img{width:100%;max-width:100%;margin:0;height:auto;object-fit:contain}.detail-figure img{width:100%;height:auto;object-fit:contain}
-.steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:42px 36px}.steps li{min-width:0}.step-figure{border:1px solid #e2e9e1;border-radius:18px;background:#f8f8f3;overflow:hidden;margin-bottom:21px}.step-figure img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain}.step-heading{display:flex;align-items:center;gap:13px;margin-bottom:11px}.step-heading h3{margin:0;font-size:21px}.step-number{display:grid;place-items:center;flex-shrink:0;width:33px;height:33px;border-radius:50%;background:#dcece0;color:#315e48;font-size:12px;font-weight:700}.steps p{font-size:16px;line-height:1.85}.problem-figure figcaption{font-size:13px;line-height:1.8;padding-inline:15px;white-space:normal}
+.steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:42px 36px}.steps li{min-width:0}.step-figure{border:1px solid #e2e9e1;border-radius:18px;background:#fff;overflow:hidden;margin-bottom:21px}.step-figure img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain;background:#fff}.step-heading{display:flex;align-items:center;gap:13px;margin-bottom:11px}.step-heading h3{margin:0;font-size:21px}.step-number{display:grid;place-items:center;flex-shrink:0;width:33px;height:33px;border-radius:50%;background:#dcece0;color:#315e48;font-size:12px;font-weight:700}.steps p{font-size:16px;line-height:1.85}.problem-figure figcaption{font-size:13px;line-height:1.8;padding-inline:15px;white-space:normal}
 @media(min-width:1024px){.problem-figure figcaption{white-space:nowrap;letter-spacing:-.025em}}
 @media(max-width:600px){.steps{grid-template-columns:minmax(0,1fr);gap:38px}.step-figure{margin-bottom:18px}.steps p{font-size:16px}.problem-figure figcaption{font-size:13px;white-space:normal;padding-inline:18px}}
 
 .product-stage .stage-circle{inset:4% 6%;width:auto;height:auto;max-height:none;aspect-ratio:auto}.hero-figure figcaption{position:relative;z-index:1;margin-top:16px;font-size:12px;line-height:1.8}
-
-/* Supplied finished artwork: keep the original portrait ratio without cropping. */
-.step-figure img.step-image-original{aspect-ratio:auto;width:100%;height:auto;object-fit:contain}
