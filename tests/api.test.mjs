@@ -2,7 +2,8 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { runtime, migrate } from '../scripts/runtime.mjs';
 import { hashPassword, now } from '../server/security.js';
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, readFile } from 'node:fs/promises';
+import { statements } from '../scripts/migrations.mjs';
 import { join, resolve } from 'node:path';
 import { root } from '../scripts/runtime.mjs';
 let mf, db; let nextIp = 1;
@@ -19,7 +20,7 @@ class Client {
   }
   async init() { return this.call('/api/session'); }
 }
-const postData = { nickname: '테스트사용자', title: '높이 조절이 궁금해요', content: '사용하기 편한 높이로 어떻게 조절하는지 궁금합니다.', category: 'usage', password: crypto.randomUUID() };
+const postData = { nickname: '테스트사용자', title: '높이 조절이 궁금해요', content: '사용하기 편한 높이로 어떻게 조절하는지 궁금합니다.', category: 'purchase', password: crypto.randomUUID() };
 before(async () => {
   mf = runtime({ persist: false, port: 0 }); db = await mf.getD1Database('DB'); await migrate(db);
   await db.prepare('INSERT INTO admins VALUES (?,?,?,?)').bind('admin-test', 'test-admin', await hashPassword(postData.password), now()).run();
@@ -109,4 +110,56 @@ test('D1 records persist across a complete runtime restart', async () => {
     if (!resolve(dir).startsWith(parent + (process.platform === 'win32' ? '\\' : '/'))) throw new Error('Invalid test cleanup path');
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test('purchase inquiries work and legacy usage posts keep their meaning when read or edited', async () => {
+  const author = new Client(); await author.init();
+  assert.equal((await author.call('/api/posts', { method: 'POST', body: { ...postData, category: 'usage' } })).status, 400);
+  const made = await author.call('/api/posts', { method: 'POST', body: postData }); assert.equal(made.status, 201);
+  const path = `/api/posts/${made.data.id}`;
+  assert.equal((await author.call(path)).data.post.category, 'purchase');
+  assert.ok((await author.call('/api/posts?category=purchase')).data.posts.some(p => p.id === made.data.id));
+  assert.equal((await author.call(path, { method: 'PUT', body: { ...postData, title: '수정한 구매 문의' } })).status, 200);
+  assert.equal((await author.call(path, { method: 'PUT', body: { ...postData, category: 'usage' } })).status, 400);
+  const legacyId = crypto.randomUUID(); const time = now() - 100;
+  await db.prepare('INSERT INTO posts VALUES (?,?,?,?,?,?,?,?)').bind(legacyId, '기존사용자', '기존 사용 방법 질문', '기존 사용 방법 분류와 답변이 보존되어야 하는 글입니다.', 'usage', await hashPassword(postData.password), time, time).run();
+  await db.prepare('INSERT INTO replies VALUES (?,?,?,?,?)').bind(legacyId, '기존에 작성한 답변을 그대로 보존합니다.', 'admin-test', time, time).run();
+  const legacy = await author.call(`/api/posts/${legacyId}`);
+  assert.equal(legacy.data.post.category, 'usage'); assert.equal(legacy.data.post.answered, 1);
+  const filtered = await author.call('/api/posts?category=usage'); assert.equal(filtered.data.legacyUsage, 1); assert.ok(filtered.data.posts.some(p => p.id === legacyId));
+  const edit = await author.call(`/api/posts/${legacyId}`, { method: 'PUT', body: { ...postData, category: 'usage', title: '내용을 수정한 기존 사용 방법 질문' } }); assert.equal(edit.status, 200);
+  const after = (await author.call(`/api/posts/${legacyId}`)).data.post;
+  assert.equal(after.category, 'usage'); assert.equal(after.reply_content, legacy.data.post.reply_content);
+  const { categories } = await import('../public/js/api.js'); assert.equal(categories.purchase, '구매 문의'); assert.equal(categories.usage, '사용 방법');
+  for (const file of ['write', 'board', 'admin']) {
+    const html = await readFile(new URL(`../public/${file}.html`, import.meta.url), 'utf8');
+    assert.ok(html.includes('<option value="purchase">구매 문의</option>')); assert.ok(!html.includes('<option value="usage">'));
+  }
+  await author.call(path, { method: 'DELETE', body: { password: postData.password } });
+  await author.call(`/api/posts/${legacyId}`, { method: 'DELETE', body: { password: postData.password } });
+});
+
+test('category migration atomically preserves old posts, replies, password hashes and administrator accounts', async () => {
+  const instance = runtime({ persist: false, port: 0 });
+  try {
+    const oldDb = await instance.getD1Database('DB');
+    const initial = await readFile(new URL('../migrations/0001_initial.sql', import.meta.url), 'utf8');
+    await oldDb.batch(statements(initial).map(sql => oldDb.prepare(sql)));
+    const hash = await hashPassword(postData.password); const time = now() - 500; const id = crypto.randomUUID();
+    await oldDb.prepare('INSERT INTO admins VALUES (?,?,?,?)').bind('legacy-admin', 'legacy-admin', hash, time).run();
+    await oldDb.prepare('INSERT INTO posts VALUES (?,?,?,?,?,?,?,?)').bind(id, '기존고객', '보존할 사용 방법 문의', '분류와 비밀번호 및 기존 답변이 보존되어야 합니다.', 'usage', hash, time, time).run();
+    await oldDb.prepare('INSERT INTO replies VALUES (?,?,?,?,?)').bind(id, '보존할 기존 관리자 답변입니다.', 'legacy-admin', time, time).run();
+    const snapshot = async () => ({ posts: (await oldDb.prepare('SELECT * FROM posts ORDER BY id').all()).results, replies: (await oldDb.prepare('SELECT * FROM replies ORDER BY post_id').all()).results, admins: (await oldDb.prepare('SELECT * FROM admins ORDER BY id').all()).results });
+    const before = await snapshot(); const second = await readFile(new URL('../migrations/0002_purchase_category.sql', import.meta.url), 'utf8');
+    await assert.rejects(oldDb.batch([...statements(second).map(sql => oldDb.prepare(sql)), oldDb.prepare('INSERT INTO deliberately_missing_table VALUES (1)')]));
+    assert.deepEqual(await snapshot(), before, 'failed migration must roll back parent and child table replacements');
+    assert.deepEqual(await migrate(oldDb), ['0002_purchase_category.sql']);
+    assert.deepEqual(await snapshot(), before, 'successful migration must not alter existing records');
+    assert.deepEqual(await migrate(oldDb), [], 'migration is applied only once');
+    assert.equal((await oldDb.prepare('PRAGMA foreign_key_check').all()).results.length, 0);
+    const foreignKeys = (await oldDb.prepare('PRAGMA foreign_key_list(replies)').all()).results; assert.ok(foreignKeys.some(row => row.table === 'posts'));
+    await oldDb.prepare('INSERT INTO posts VALUES (?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), '구매고객', '새 구매 문의', '새 구매 문의 분류를 저장할 수 있습니다.', 'purchase', hash, time, time).run();
+    await oldDb.prepare('DELETE FROM posts WHERE id=?').bind(id).run();
+    assert.equal(await oldDb.prepare('SELECT post_id FROM replies WHERE post_id=?').bind(id).first(), null, 'normal cascade deletion still works after migration');
+  } finally { await instance.dispose(); }
 });

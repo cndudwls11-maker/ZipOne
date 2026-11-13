@@ -1,15 +1,16 @@
 import { now, randomToken, digest, hashPassword, verifyPassword, HttpError, cookies, cookieNames, cookie, checkCsrf, readJson, textField, passwordField, throttle, securityHeaders } from './security.js';
 
-const categories = ['product', 'usage', 'idea', 'other'];
+const newCategories = ['product', 'purchase', 'idea', 'other'];
+const readableCategories = [...newCategories, 'usage'];
 const idPattern = /^[a-f0-9-]{36}$/;
 const publicColumns = 'p.id,p.nickname,p.title,p.category,p.created_at,p.updated_at,CASE WHEN r.post_id IS NULL THEN 0 ELSE 1 END AS answered';
 const response = (body, status = 200, extra = {}) => Response.json(body, { status, headers: { ...securityHeaders, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow', ...extra } });
 
-function fields(data) {
+function fields(data, allowLegacyUsage = false) {
   const nickname = textField(data, 'nickname', 2, 20, '닉네임');
   const title = textField(data, 'title', 2, 100, '제목');
   const content = textField(data, 'content', 10, 5000, '내용');
-  if (!categories.includes(data.category)) throw new HttpError(400, '분류를 선택해 주세요.', 'category');
+  if (!newCategories.includes(data.category) && !(allowLegacyUsage && data.category === 'usage')) throw new HttpError(400, '분류를 선택해 주세요.', 'category');
   return { nickname, title, content, category: data.category };
 }
 async function adminSession(request, db, required = true) {
@@ -30,9 +31,10 @@ async function postById(db, id) {
 async function ownsPost(db, request, id, data) {
   await throttle(db, request, 'post-password', 10, 600);
   const password = passwordField(data);
-  const post = await db.prepare('SELECT password_hash FROM posts WHERE id=?').bind(id).first();
+  const post = await db.prepare('SELECT password_hash,category FROM posts WHERE id=?').bind(id).first();
   if (!post) throw new HttpError(404, '게시글을 찾을 수 없습니다.');
   if (!(await verifyPassword(password, post.password_hash))) throw new HttpError(403, '게시글 비밀번호가 올바르지 않습니다.', 'password');
+  return post;
 }
 
 export async function handleApi(request, env) {
@@ -88,7 +90,7 @@ export async function handleApi(request, env) {
     if (path === '/api/posts' && method === 'GET') {
       const search = (url.searchParams.get('q') || '').trim();
       const category = url.searchParams.get('category') || '';
-      if (search.length > 100 || (category && !categories.includes(category))) throw new HttpError(400, '검색 조건을 확인해 주세요.');
+      if (search.length > 100 || (category && !readableCategories.includes(category))) throw new HttpError(400, '검색 조건을 확인해 주세요.');
       const pageRaw = url.searchParams.get('page') || '1';
       if (!/^[1-9]\d{0,5}$/.test(pageRaw)) throw new HttpError(400, '페이지 번호가 올바르지 않습니다.');
       const page = Number(pageRaw); const pageSize = 8;
@@ -102,8 +104,9 @@ export async function handleApi(request, env) {
       const batch = await db.batch([
         db.prepare(`SELECT COUNT(*) AS total FROM posts p ${where}`).bind(...params),
         db.prepare(`SELECT ${publicColumns} FROM posts p LEFT JOIN replies r ON r.post_id=p.id ${where} ORDER BY p.created_at DESC,p.id DESC LIMIT ? OFFSET ?`).bind(...params, pageSize, (page - 1) * pageSize),
+        db.prepare("SELECT COUNT(*) AS total FROM posts WHERE category='usage'"),
       ]);
-      return response({ posts: batch[1].results, total: batch[0].results[0].total, page, pageSize });
+      return response({ posts: batch[1].results, total: batch[0].results[0].total, page, pageSize, legacyUsage: batch[2].results[0].total });
     }
     if (path === '/api/posts' && method === 'POST') {
       await throttle(db, request, 'create-post', 5, 600);
@@ -139,10 +142,10 @@ export async function handleApi(request, env) {
         if (!action && method === 'GET') return response({ post: await postById(db, id) });
         if ((!action && ['PUT', 'DELETE'].includes(method)) || (action === 'verify' && method === 'POST')) {
           const data = await readJson(request);
-          await ownsPost(db, request, id, data);
+          const existing = await ownsPost(db, request, id, data);
           if (action === 'verify') return response({ ok: true });
           if (method === 'PUT') {
-            const post = fields(data);
+            const post = fields(data, existing.category === 'usage');
             const result = await db.prepare('UPDATE posts SET nickname=?,title=?,content=?,category=?,updated_at=? WHERE id=?').bind(post.nickname, post.title, post.content, post.category, now(), id).run();
             if (!result.meta.changes) throw new HttpError(404, '게시글을 찾을 수 없습니다.');
           } else await db.prepare('DELETE FROM posts WHERE id=?').bind(id).run();

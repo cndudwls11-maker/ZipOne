@@ -1,4 +1,4 @@
-export const categories = { product: '제품 질문', usage: '사용 방법', idea: '개선 제안', other: '기타 요청' };
+export const categories = { product: '제품 질문', purchase: '구매 문의', usage: '사용 방법', idea: '개선 제안', other: '기타 요청' };
 let csrf = ''; let sessionPromise;
 export async function session(refresh = false) {
   if (!sessionPromise || refresh) {

@@ -1,4 +1,4 @@
-import { request, session, showError, clearError, busy } from './api.js';
+import { request, session, showError, clearError, busy, el } from './api.js';
 const params = new URLSearchParams(location.search); const id = params.get('id');
 const form = document.querySelector('#write-form'); const verifyForm = document.querySelector('#verify-form');
 const errorBox = document.querySelector('#write-error'); let editPassword = ''; let dirty = false; let submitted = false;
@@ -17,6 +17,7 @@ if (id) {
         editPassword = verifyForm.elements.password.value;
         await request(`/api/posts/${encodeURIComponent(id)}/verify`, { method: 'POST', body: { password: editPassword } });
         const { post } = await request(`/api/posts/${encodeURIComponent(id)}`);
+        if (post.category === 'usage') form.elements.category.append(el('option', { value: 'usage', text: '사용 방법 (기존 글 유지)' }));
         for (const key of ['nickname', 'title', 'content', 'category']) form.elements[key].value = post[key];
         form.elements.password.required = false; form.elements.password.disabled = true;
         document.querySelector('#write-password-field').hidden = true;

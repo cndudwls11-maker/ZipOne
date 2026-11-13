@@ -3,6 +3,7 @@ import { request, el, categories, stateBox, dateLabel, statusBadge } from './api
 export function mountBoard() {
   const form = document.querySelector('#search-form'); const target = document.querySelector('#board-results');
   const params = new URLSearchParams(location.search);
+  if (params.get('category') === 'usage') form.elements.category.append(el('option', { value: 'usage', text: '사용 방법 (기존 글)' }));
   form.elements.q.value = params.get('q') || '';
   form.elements.category.value = params.get('category') || '';
   form.addEventListener('submit', event => {
@@ -17,6 +18,7 @@ export function mountBoard() {
       const query = new URLSearchParams();
       for (const key of ['q', 'category', 'page']) if (params.has(key)) query.set(key, params.get(key));
       const data = await request(`/api/posts?${query}`);
+      if (data.legacyUsage > 0 && !form.elements.category.querySelector('option[value=usage]')) form.elements.category.append(el('option', { value: 'usage', text: '사용 방법 (기존 글)' }));
       const totalPages = Math.max(1, Math.ceil(data.total / data.pageSize));
       const count = el('div', { class: 'board-meta' }, [el('span', { text: `총 ${data.total.toLocaleString('ko-KR')}개의 이야기` }), el('span', { text: `${data.page} / ${totalPages} 페이지` })]);
       target.replaceChildren(count);
