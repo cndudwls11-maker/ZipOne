@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.dev.vars
+.env
+.env.*
+!.env.example
+.zipone/
+.wrangler/
+coverage/
+*.log
+*.sqlite*
+admin-credentials*
