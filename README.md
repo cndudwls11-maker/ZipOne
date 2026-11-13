@@ -2,9 +2,9 @@
 
 고객용 제품 소개 홈페이지와 요청·질문 게시판입니다. HTML, CSS, 브라우저 JavaScript로 만들었으며 프런트엔드 프레임워크는 사용하지 않습니다. 게시글·답변·관리자 계정·세션은 Cloudflare D1에 저장합니다.
 
-- 배포 대상: https://zipone.pages.dev (2026-11-14 현재 Cloudflare 오류로 운영 배포 성공 확인 전)
-- 배포 후 게시판 경로: `/board`
-- 배포 후 관리자 경로: `/admin`
+- 운영 홈페이지: https://zipone.pages.dev (2026-11-14 실제 접속·게시판·관리자 검증 완료)
+- 게시판: https://zipone.pages.dev/board
+- 관리자: https://zipone.pages.dev/admin
 - 저장소: https://github.com/cndudwls11-maker/ZipOne
 - Windows 로컬 작업 폴더: `C:\Users\youngjin\Desktop\웹페이지 데이터\ZipOne`
 
@@ -45,6 +45,7 @@ dist/               배포 산출물 (빌드로 생성, Git 제외)
 | 이름 | 용도 | 설정 위치 |
 | --- | --- | --- |
 | `SITE_URL` | canonical, 공유 이미지, sitemap, robots의 기준 주소 | Pages 빌드 환경 또는 로컬 셸. 미설정 시 `site.config.json` 사용 |
+| `NODE_VERSION` | Pages 빌드 Node.js 버전, 현재 `22` | Pages 운영 및 미리보기 빌드 환경 |
 | `PORT` | 로컬 서버 포트, 기본값 8788 | 로컬 셸 |
 | `CLOUDFLARE_API_TOKEN` | 원격 DB 초기화·관리자 생성 도구용, 해당 계정 D1 Edit 권한 | 로컬 셸 또는 CI 비밀정보 저장소 |
 | `CLOUDFLARE_ACCOUNT_ID` | CLI 도구가 사용할 계정, 미설정 시 설정 파일의 계정 | 로컬 셸 |
@@ -53,6 +54,8 @@ dist/               배포 산출물 (빌드로 생성, Git 제외)
 런타임에는 D1 바인딩 외에 비밀 환경변수가 필요하지 않습니다. 관리자 평문 비밀번호나 토큰은 소스·빌드 산출물에 넣지 않습니다. 계정·DB 식별자는 공개 설정값입니다. `.env`, `.dev.vars`, `.zipone`, 로컬 DB와 로그는 Git에서 제외됩니다. 제공된 `.env.example`은 값이 없는 참고 파일이며 자동으로 읽지 않습니다.
 
 ## 데이터베이스 초기화
+
+기존 운영 D1 `zipone-board`가 있으면 먼저 테이블·게시글·관리자 상태를 조회하고 바인딩만 복구하세요. 이 프로젝트의 운영 DB는 보존되어 있으며 새 사이트에 다시 연결했습니다. 기존 DB를 삭제하거나 초기화하고 관리자 계정을 다시 만들 필요가 없습니다. 아래 초기화 명령은 새 DB를 설정할 때 사용합니다.
 
 로컬 DB는 `npm run dev`가 자동 초기화합니다. 수동 실행은 빌드 후 다음과 같습니다.
 
@@ -102,7 +105,7 @@ npm run admin:create -- --remote --username zipone-admin
 
 `main`에 푸시하면 Cloudflare Pages가 자동으로 빌드하고 배포합니다. 배포 로그에서 빌드·검증 성공과 해당 커밋의 배포 상태를 확인하세요. 다른 계정에서 설치할 때는 Pages에서 GitHub 저장소를 연결하고 위 빌드 설정과 D1 바인딩을 지정한 뒤 `site.config.json`의 리소스와 주소를 실제 값으로 바꿉니다. `SITE_URL`을 새로운 HTTPS 원점 주소로 지정하면 메타데이터·sitemap·robots가 빌드 때 함께 갱신됩니다.
 
-**현재 운영 확인 한계:** 전용 Pages 프로젝트 생성, Git 연결, D1 바인딩과 스키마·관리자 저장은 완료했습니다. 이후 Pages 조회·설정·배포 API에서 HTTP 503이 반복되었고 Cloudflare 대시보드도 오류를 표시했습니다. 대상 주소는 HTTP 522로 응답했습니다. GitHub Actions의 빌드와 7개 테스트는 성공했지만, 실제 Pages 빌드 상태·배포 성공 및 운영 URL의 HTTP 게시판 기능은 확인하지 못했습니다. Cloudflare 서비스가 정상화되면 `zipone` 프로젝트의 Deployments에서 최신 `main` 커밋을 확인하고, 대기 중인 배포가 없을 경우 그 커밋의 배포를 시작하거나 재시도하세요. 운영 주소에서 글 등록·수정·삭제와 관리자 답변을 다시 검증해야 합니다. 원격 DB 초기화를 다시 할 필요는 없습니다.
+**운영 복구 확인(2026-11-14):** 사용자가 새로 만든 Pages 프로젝트의 설정을 다시 조회했습니다. 빌드 명령과 출력 폴더가 비어 있어 로그에 `No build command specified. Skipping build step.`이 기록되었고, 루트는 404, `/public/index.html`은 200이었습니다. 새 프로젝트의 D1 바인딩도 없어 API가 503을 반환했습니다. 빌드 명령을 `npm ci && npm run build`, 출력 폴더를 `dist`, 환경을 `NODE_VERSION=22`·`SITE_URL=https://zipone.pages.dev`로 수정하고, 남아 있던 `zipone-board`를 운영 `DB`로 연결했습니다. 스키마와 관리자 계정을 초기화하거나 재생성하지 않았습니다. 재배포 후 홈·이미지·API 200, 실제 운영 CRUD와 관리자 답변 및 브라우저 화면 검증을 완료했습니다. 자세한 기록은 `DEPLOYMENT.md`에 있습니다.
 
 `sitemap.xml`에는 홈과 게시판만 포함됩니다. 관리자·작성·수정·게시글 상세·API는 `noindex` 또는 `X-Robots-Tag`를 사용하며 robots에도 제외 경로를 지정합니다. 검색 노출 제외는 접근 권한을 대체하지 않으므로 관리자 보호는 서버가 별도로 수행합니다.
 
