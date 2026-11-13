@@ -1,9 +1,11 @@
 # ImageGen 사용 방법 이미지 제작 기록
 
+현재 3·4단계는 사용자가 제공한 완성본 `3. 옷의 아래쪽 넣기.png`, `4.한 손으로 지퍼 잠그기.png`를 그대로 복사한 `how-fabric-v3.png`, `how-zip-v3.png`로 교체했습니다. 재생성·디자인 변경·화살표 추가 없이 원본 비율을 유지했습니다. 아래 내용은 이전 v2 이미지 제작 이력이며 1·2단계는 계속 사용합니다.
+
 모드: 실제 내장 image_gen 도구. CLI/API 대체 생성은 사용하지 않았습니다.
 참조 원본: 사용자가 제공한 zipone 제품 패키징 모의 이미지.png. 대표 파일은 public/assets/product-packaging-v2.png이며 수정 없이 복사했습니다.
 
-## 최종 파일
+## v2 생성 당시 파일
 
 - public/assets/how-height-v2.png: 측면 다이얼 조작과 상단 높이 관계
 - public/assets/how-detect-v2.png: 전면 감지부 앞의 손, 직접 만지지 않고 열린 세로 집게

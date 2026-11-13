@@ -141,7 +141,7 @@ ZipOne은 의류 하단을 잡아주어 한 손으로 지퍼를 잠그는 동작
 
 ## 제품 이미지와 구매 문의 변경 (2026-11-14)
 
-대표 이미지는 제공된 새 패키징 이미지를 원본 그대로 복사한 `public/assets/product-packaging-v2.png`로 통일했습니다. HTML 공유 메타데이터도 같은 새 파일을 사용합니다. 사용 방법 네 장은 실제 ImageGen 도구로 제작·보정한 `how-height-v2.png`, `how-detect-v2.png`, `how-fabric-v2.png`, `how-zip-v2.png`이며 대체 텍스트와 단계 설명은 HTML에 있습니다. 생성 지침과 파일 대응은 `docs/IMAGE_GENERATION.md`에 기록했습니다.
+대표 이미지는 제공된 새 패키징 이미지를 원본 그대로 복사한 `public/assets/product-packaging-v2.png`로 통일했습니다. HTML 공유 메타데이터도 같은 새 파일을 사용합니다. 사용 방법 1·2단계는 기존 `how-height-v2.png`, `how-detect-v2.png`를 유지합니다. 3·4단계는 사용자가 제공한 완성본을 픽셀 변경 없이 복사한 `how-fabric-v3.png`, `how-zip-v3.png`이며 원본 크기는 각각 1199×1312입니다. 제목·설명과 나머지 이미지는 유지하고, 두 이미지에만 원본 비율 표시를 적용했습니다. 대체 텍스트와 단계 설명은 HTML에 있습니다. 생성 지침과 파일 대응은 `docs/IMAGE_GENERATION.md`에 기록했습니다.
 
 신규 글은 제품 질문 / 구매 문의 / 개선 제안 / 기타 요청을 사용합니다. 기존 사용 방법 글의 `usage` 값은 바꾸지 않습니다. 기존 글이 있을 때만 목록·관리자 필터에 해당 분류가 나타나며, 해당 글을 수정할 때는 원래 분류를 유지할 수 있습니다. 신규 글이나 다른 분류 글을 `usage`로 등록하는 API 요청은 거부합니다.
 

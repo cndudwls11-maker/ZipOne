@@ -19,3 +19,6 @@
 @media(max-width:600px){.steps{grid-template-columns:minmax(0,1fr);gap:38px}.step-figure{margin-bottom:18px}.steps p{font-size:16px}.problem-figure figcaption{font-size:13px;white-space:normal;padding-inline:18px}}
 
 .product-stage .stage-circle{inset:4% 6%;width:auto;height:auto;max-height:none;aspect-ratio:auto}.hero-figure figcaption{position:relative;z-index:1;margin-top:16px;font-size:12px;line-height:1.8}
+
+/* Supplied finished artwork: keep the original portrait ratio without cropping. */
+.step-figure img.step-image-original{aspect-ratio:auto;width:100%;height:auto;object-fit:contain}
