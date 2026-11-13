@@ -35,4 +35,11 @@ Windows의 ego-browser Chromium에서 실제 화면을 조작했습니다.
 
 ## 배포
 
-ZipOne 전용 Cloudflare Pages, GitHub `main` 자동 배포 연결, 전용 D1 및 `DB` 바인딩과 스키마 초기화를 구성했습니다. 운영 배포의 최종 상태와 URL은 완료 보고에서 별도로 확인합니다. 다른 프로젝트의 파일·데이터베이스는 변경하지 않았습니다.
+ZipOne 전용 Cloudflare Pages, GitHub `main` 자동 배포 연결, 전용 D1 및 `DB` 바인딩과 스키마 초기화를 구성했습니다. 다른 프로젝트의 파일·데이터베이스는 변경하지 않았습니다.
+
+- 구현 커밋 `95e1fda4d81f4aeedf57fcb712748efc4f3e053d`를 `main`에 일반 푸시했습니다. 강제 푸시나 기록 삭제는 하지 않았습니다.
+- GitHub Actions의 [Verify ZipOne 실행](https://github.com/cndudwls11-maker/ZipOne/actions/runs/43456600488)이 성공했습니다. Linux / Node.js 22에서도 빌드와 통합 검증을 통과했습니다.
+- 원격 D1에서 스키마 적용 1건, 관리자 1명, 게시글 0건을 직접 조회해 확인했습니다. 운영 DB에는 검증 게시글을 넣지 않았습니다.
+- Pages의 프로젝트·배포 조회 및 설정 API가 반복 HTTP 503(`no healthy upstream`)을 반환했습니다. Cloudflare 대시보드에도 ‘요청을 완료할 수 없습니다’ 오류가 표시됩니다.
+- 할당된 배포 대상 `https://zipone.pages.dev/`는 HTTP 522로 응답했습니다. **배포 성공과 운영 HTTP 게시판 검증은 완료하지 못했습니다.** 이 주소를 정상 운영 중인 사이트로 보고하지 않습니다.
+- Cloudflare가 정상화되면 Deployments에서 최신 `main` 커밋의 상태를 먼저 확인하고, 실행 중인 배포가 없는 경우 배포/재시도를 진행한 뒤 실제 주소에서 CRUD·관리자 답변을 검증해야 합니다. Git 연결과 DB 설정은 이미 구성되어 있습니다.

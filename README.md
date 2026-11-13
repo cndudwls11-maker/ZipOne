@@ -2,9 +2,9 @@
 
 고객용 제품 소개 홈페이지와 요청·질문 게시판입니다. HTML, CSS, 브라우저 JavaScript로 만들었으며 프런트엔드 프레임워크는 사용하지 않습니다. 게시글·답변·관리자 계정·세션은 Cloudflare D1에 저장합니다.
 
-- 서비스: https://zipone.pages.dev
-- 게시판: https://zipone.pages.dev/board
-- 관리자: https://zipone.pages.dev/admin
+- 배포 대상: https://zipone.pages.dev (2026-11-14 현재 Cloudflare 오류로 운영 배포 성공 확인 전)
+- 배포 후 게시판 경로: `/board`
+- 배포 후 관리자 경로: `/admin`
 - 저장소: https://github.com/cndudwls11-maker/ZipOne
 - Windows 로컬 작업 폴더: `C:\Users\youngjin\Desktop\웹페이지 데이터\ZipOne`
 
@@ -101,6 +101,8 @@ npm run admin:create -- --remote --username zipone-admin
 - 미리보기 브랜치 자동 배포는 꺼져 있어 운영 DB에 테스트 글이 들어오는 것을 줄입니다. 미리보기를 사용할 때는 별도 D1 DB를 연결하세요.
 
 `main`에 푸시하면 Cloudflare Pages가 자동으로 빌드하고 배포합니다. 배포 로그에서 빌드·검증 성공과 해당 커밋의 배포 상태를 확인하세요. 다른 계정에서 설치할 때는 Pages에서 GitHub 저장소를 연결하고 위 빌드 설정과 D1 바인딩을 지정한 뒤 `site.config.json`의 리소스와 주소를 실제 값으로 바꿉니다. `SITE_URL`을 새로운 HTTPS 원점 주소로 지정하면 메타데이터·sitemap·robots가 빌드 때 함께 갱신됩니다.
+
+**현재 운영 확인 한계:** 전용 Pages 프로젝트 생성, Git 연결, D1 바인딩과 스키마·관리자 저장은 완료했습니다. 이후 Pages 조회·설정·배포 API에서 HTTP 503이 반복되었고 Cloudflare 대시보드도 오류를 표시했습니다. 대상 주소는 HTTP 522로 응답했습니다. GitHub Actions의 빌드와 7개 테스트는 성공했지만, 실제 Pages 빌드 상태·배포 성공 및 운영 URL의 HTTP 게시판 기능은 확인하지 못했습니다. Cloudflare 서비스가 정상화되면 `zipone` 프로젝트의 Deployments에서 최신 `main` 커밋을 확인하고, 대기 중인 배포가 없을 경우 그 커밋의 배포를 시작하거나 재시도하세요. 운영 주소에서 글 등록·수정·삭제와 관리자 답변을 다시 검증해야 합니다. 원격 DB 초기화를 다시 할 필요는 없습니다.
 
 `sitemap.xml`에는 홈과 게시판만 포함됩니다. 관리자·작성·수정·게시글 상세·API는 `noindex` 또는 `X-Robots-Tag`를 사용하며 robots에도 제외 경로를 지정합니다. 검색 노출 제외는 접근 권한을 대체하지 않으므로 관리자 보호는 서버가 별도로 수행합니다.
 
